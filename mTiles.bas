@@ -549,7 +549,7 @@ Public Sub SETOverlay(V As Double)
             iR = Bytes(X + 2, Y) * Inv255
 
             rR = BlendOverlay(iR, bR)
-            rG = BlendOverlay(iG, bB)
+            rG = BlendOverlay(iG, bG)
             rB = BlendOverlay(iB, bB)
 
             Bytes(X + 0, Y) = rB * 255
