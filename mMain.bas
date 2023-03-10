@@ -45,15 +45,16 @@ Public Sub MAINLOOP()
 
     fMainhDC = fMain.hDC
 
+
     Do
         Select Case Tick.WaitForNext
         Case tDRAW
 
-            SetTile2 11, CamPosX, CamPosY
+            SetTile2 14, CamPosX, CamPosY
 
 
             DRAWBackGround
-            CNT = CNT + 1
+
 
             If (CNT \ 1300) Mod 2 = 0 Then
                 CamPosX = TW * 0.5 + Cos(Timer * 0.4) * TW * 0.35
@@ -68,7 +69,7 @@ Public Sub MAINLOOP()
                 overlayValue = overlayValue + 0.01: If overlayValue > 1 Then overlayValue = overlayValue - 1
             End If
 
-
+            CNT = CNT + 1
 
         Case t1Sec
             fMain.Caption = "Draw FPS: " & CNT - oCnt & "      (ESC and then window 'X' to quit)"

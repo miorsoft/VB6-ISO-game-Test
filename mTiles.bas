@@ -25,6 +25,9 @@ Public Const tileH As Long = 25
 Public Const XIncrement As Long = 31    '31
 Public Const YIncrement As Long = 11    '11
 
+Public Const Inv255 As Double = 1 / 255
+Public Const PI2  As Double = 6.28318530717959
+
 Private NtilesImg As Long
 Public Type tTile
     H             As Double
@@ -56,7 +59,9 @@ Private BYTESScreen() As Byte
 Private ZETA      As Long
 Private Z()       As Long
 
-
+Private OvR#, OvG#, OvB#
+Attribute OvG.VB_VarUserMemId = 1073741833
+Attribute OvB.VB_VarUserMemId = 1073741833
 Public Sub TileXYtoScreen(X#, Y#, scrX#, scrY#)
 '    scrX = (X + Y) * (tileW * 0.5)
 '    scrY = (Y - X) * (tileH * 0.5)
@@ -188,19 +193,15 @@ Public Sub InitTiles()
     TileXYtoScreen -0.5, 0.5 + TH, cX, cY
 
 
-    Ax = Ax + 100: cX = cX - 100
-    By = By + 100: DY = DY - 100
+    Ax = Ax + 150: cX = cX - 150
+    By = By + 150: DY = DY - 150
     Set srfbkg = Cairo.CreateSurface(Ax - cX, By - DY, ImageSurface)
     Set srf2Screen = Cairo.CreateSurface(srfbkg.Width, srfbkg.Height, ImageSurface)
     ReDim Z(srfbkg.Width, srfbkg.Height)
 
     SetupBACKGROUND
 
-
-
     srf2Screen.CreateContext.RenderSurfaceContent srfbkg, 0, 0
-
-
 
 
     bgCX = srfbkg.Width * 0.5
@@ -220,26 +221,29 @@ Public Sub SetupBACKGROUND()
     Dim Y         As Long
     Dim TX        As Double
     Dim TY        As Double
+    Dim TrX       As Double
+    Dim TrY       As Double
+
     Dim Idx       As Long
 
 
-    Dim tmpCC     As cCairoContext
+    Dim bgCC      As cCairoContext
 
-    Set tmpCC = srfbkg.CreateContext
+    Set bgCC = srfbkg.CreateContext
 
-    tmpCC.Save
+    bgCC.Save
 
     srfbkg.BindToArray BYTESBackgr
     srf2Screen.BindToArray BYTESScreen
 
 
-    TileXYtoScreen CamPosX, CamPosY, TX, TY
+    TileXYtoScreen CamPosX, CamPosY, TrX, TrY
 
-    tmpCC.TranslateDrawings -TX, -TY
+    bgCC.TranslateDrawings -TrX, -TrY
 
-    tmpCC.SetSourceColor 0: tmpCC.Paint
-    tmpCC.SelectFont "Courier New", 8, vbGreen
-    tmpCC.SetSourceColor 255
+    bgCC.SetSourceColor 0: bgCC.Paint
+    bgCC.SelectFont "Courier New", 8, vbGreen
+    bgCC.SetSourceColor 255
 
     ' FLOOR
 
@@ -248,33 +252,38 @@ Public Sub SetupBACKGROUND()
             Idx = 0
             TX = TilesMAP(X, Y).scrX + TILE(Idx).offX + srfbkg.Width * 0.5
             TY = TilesMAP(X, Y).scrY + TILE(Idx).offY + srfbkg.Height * 0.5
-            tmpCC.RenderSurfaceContent TILE(Idx).tSrf, TX, TY
+            bgCC.RenderSurfaceContent TILE(Idx).tSrf, TX, TY
         Next
     Next
 
     ' other TilesMAP
     ZETA = 0
-    For X = 0 To TW
-        For Y = 0 To TH
 
+
+    For Y = 0 To TH
+        For X = 0 To TW
 
             Idx = TilesMAP(X, Y).ImgIdx
             If Idx Then
                 TX = TilesMAP(X, Y).scrX + TILE(Idx).offX + srfbkg.Width * 0.5
                 TY = TilesMAP(X, Y).scrY + TILE(Idx).offY + srfbkg.Height * 0.5
-                tmpCC.RenderSurfaceContent TILE(Idx).tSrf, TX, TY
-                UPDATEZ      '********************************************************************************
+                bgCC.RenderSurfaceContent TILE(Idx).tSrf, TX, TY
+                'UPDATEZ      '********************************************************************************
+
+                UPDATEZ2 TX - 1 - TrX, TY - 1 - TrY, _
+                         TX + TILE(Idx).tSrf.Width - TrX, TY + TILE(Idx).tSrf.Height - TrY
+
                 srf2Screen.CreateContext.RenderSurfaceContent srfbkg, 0, 0
             End If
 
-            ZETA = X + Y
+            ZETA = ZETA + 1 'X + Y
 
         Next
     Next
 
 
 
-    tmpCC.Restore
+    bgCC.Restore
     srfbkg.DrawToDC fMainhDC
 
     DoEvents
@@ -282,7 +291,6 @@ End Sub
 Private Sub UPDATEZ()
 
     Dim X&, Y&
-
 
     For X = 0 To UBound(BYTESBackgr, 1) Step 4
         For Y = 0 To UBound(BYTESBackgr, 2) Step 1
@@ -293,7 +301,22 @@ Private Sub UPDATEZ()
     Next
 
 End Sub
+Private Sub UPDATEZ2(Xf&, Yf&, Xt&, Yt&)
 
+    Dim X&, Y&
+    Dim X4&
+
+    For X = Xf To Xt
+        X4 = X * 4
+        For Y = Yf To Yt
+            If BYTESBackgr(X4 + 0, Y) <> BYTESScreen(X4 + 0, Y) Then Z(X, Y) = ZETA
+            If BYTESBackgr(X4 + 1, Y) <> BYTESScreen(X4 + 1, Y) Then Z(X, Y) = ZETA
+            If BYTESBackgr(X4 + 2, Y) <> BYTESScreen(X4 + 2, Y) Then Z(X, Y) = ZETA
+        Next
+    Next
+
+
+End Sub
 
 
 
@@ -355,7 +378,7 @@ End Function
 
 Public Sub SetTile(Tidx&, pX#, pY#)
 
-    Dim fx#, fy#
+    Dim fX#, fY#
     Dim tfx#, tfy#
 
     Dim tmpCC     As cCairoContext
@@ -380,10 +403,10 @@ Public Sub SetTile(Tidx&, pX#, pY#)
     TileXYtoScreen TW * 0.5, TH * 0.5, TrX, TrY
     tmpCC.TranslateDrawings -TrX, -TrY
 
-    fx = pX - iX
-    fy = pY - iy
+    fX = pX - iX
+    fY = pY - iy
 
-    TileXYtoScreen fx, fy, tfx, tfy
+    TileXYtoScreen fX, fY, tfx, tfy
 
 
     '    TX = TilesMAP(iX, iY).scrX + TILE(Tidx).offX + srf2Screen.Width * 0.5
@@ -437,13 +460,15 @@ End Sub
 
 
 Public Sub SetTile2(Tidx&, pX#, pY#)
-    Dim fx#, fy#
+    Dim fX#, fY#
     Dim tfx#, tfy#
 
     Dim tmpCC     As cCairoContext
 
     Dim TX#, TY#
     Dim TrX#, TrY#
+    Dim XrefZ     As Long
+    Dim YrefZ     As Long
 
     Dim iX&, iy&
     Dim X&, Y&
@@ -456,23 +481,23 @@ Public Sub SetTile2(Tidx&, pX#, pY#)
 
     iX = Int(pX)
     iy = Int(pY)
-    fx = pX - iX
-    fy = pY - iy
+    fX = pX - iX
+    fY = pY - iy
 
-    TileXYtoScreen fx, fy, tfx, tfy
+    TileXYtoScreen fX, fY, tfx, tfy
 
 
+
+'        XrefZ = TilesMAP(iX, iy).scrX + TILE(Tidx).offX + srf2Screen.Width * 0.5 + tfx - TrX
+'        YrefZ = TilesMAP(iX, iy).scrY + TILE(Tidx).offY + srf2Screen.Height * 0.5 + tfy - TrY
+
+    XrefZ = TilesMAP(iX - 1, iy + 1).scrX - TILE(Tidx).offX * 0.5 + srf2Screen.Width * 0.5 + tfx - TrX
+    YrefZ = TilesMAP(iX - 1, iy + 1).scrY + srf2Screen.Height * 0.5 + tfy - TrY
+
+    ZETA = Z(XrefZ, YrefZ)
 
     TX = TilesMAP(iX, iy).scrX + TILE(Tidx).offX + srf2Screen.Width * 0.5 + tfx - TrX
     TY = TilesMAP(iX, iy).scrY + TILE(Tidx).offY + srf2Screen.Height * 0.5 + tfy - TrY
-
-
-    ZETA = Z(TX, TY)
-
-
-    TX = TilesMAP(iX, iy).scrX + TILE(Tidx).offX + srf2Screen.Width * 0.5 + tfx - TrX
-    TY = TilesMAP(iX, iy).scrY + TILE(Tidx).offY + srf2Screen.Height * 0.5 + tfy - TrY
-
     '        tmpCC.RenderSurfaceContent TILE(Tidx).tSrf, TX, TY
 
 
@@ -481,9 +506,14 @@ Public Sub SetTile2(Tidx&, pX#, pY#)
     For X = -12 To TILE(Tidx).tSrf.Width + 12
         X4 = X * 4
         For Y = -12 To TILE(Tidx).tSrf.Height + 12
-            BYTESScreen(X4 + 0 + TX4, TY + Y) = BYTESBackgr(X4 + 0 + TX4, TY + Y)
-            BYTESScreen(X4 + 1 + TX4, TY + Y) = BYTESBackgr(X4 + 1 + TX4, TY + Y)
-            BYTESScreen(X4 + 2 + TX4, TY + Y) = BYTESBackgr(X4 + 2 + TX4, TY + Y)
+            'BYTESScreen(X4 + 0 + TX4, TY + Y) = BYTESBackgr(X4 + 0 + TX4, TY + Y)
+            'BYTESScreen(X4 + 1 + TX4, TY + Y) = BYTESBackgr(X4 + 1 + TX4, TY + Y)
+            'BYTESScreen(X4 + 2 + TX4, TY + Y) = BYTESBackgr(X4 + 2 + TX4, TY + Y)
+
+            BYTESScreen(X4 + 0 + TX4, TY + Y) = BlendOverlayBYTE(BYTESBackgr(X4 + 0 + TX4, TY + Y), OvB)
+            BYTESScreen(X4 + 1 + TX4, TY + Y) = BlendOverlayBYTE(BYTESBackgr(X4 + 1 + TX4, TY + Y), OvG)
+            BYTESScreen(X4 + 2 + TX4, TY + Y) = BlendOverlayBYTE(BYTESBackgr(X4 + 2 + TX4, TY + Y), OvR)
+
             BYTESScreen(X4 + 3 + TX4, TY + Y) = 255    'BYTESbackgr(X4 + 3 + TX4, TY + Y)
         Next
     Next
@@ -495,11 +525,15 @@ Public Sub SetTile2(Tidx&, pX#, pY#)
     For X = 0 To TILE(Tidx).tSrf.Width - 1
         X4 = X * 4
         For Y = 0 To TILE(Tidx).tSrf.Height - 1
+        
             If Z(X + TX, Y + TY) <= ZETA Then
                 If BYTESTile(X4 + 3, Y) Then
-                    BYTESScreen(X4 + 0 + TX4, TY + Y) = BYTESTile(X4 + 0, Y)
-                    BYTESScreen(X4 + 1 + TX4, TY + Y) = BYTESTile(X4 + 1, Y)
-                    BYTESScreen(X4 + 2 + TX4, TY + Y) = BYTESTile(X4 + 2, Y)
+                    'BYTESScreen(X4 + 0 + TX4, TY + Y) = BYTESTile(X4 + 0, Y)
+                    'BYTESScreen(X4 + 1 + TX4, TY + Y) = BYTESTile(X4 + 1, Y)
+                    'BYTESScreen(X4 + 2 + TX4, TY + Y) = BYTESTile(X4 + 2, Y)
+                    BYTESScreen(X4 + 0 + TX4, TY + Y) = BlendOverlayBYTE(BYTESTile(X4 + 0, Y), OvB)
+                    BYTESScreen(X4 + 1 + TX4, TY + Y) = BlendOverlayBYTE(BYTESTile(X4 + 1, Y), OvG)
+                    BYTESScreen(X4 + 2 + TX4, TY + Y) = BlendOverlayBYTE(BYTESTile(X4 + 2, Y), OvR)
                 End If
             End If
         Next
@@ -512,26 +546,28 @@ Public Sub SetTile2(Tidx&, pX#, pY#)
     tmpCC.Fill
 
 
+    tmpCC.Arc XrefZ * 1, YrefZ * 1, 3
+    tmpCC.Fill
+
+
 End Sub
 
 
 
 Public Sub SETOverlay(V As Double)
-    Const Inv255  As Double = 1 / 255
-    Const PI2     As Double = 6.28318530717959
+
 
 
     Dim X         As Long
     Dim Y         As Long
 
     Dim iR#, iG#, iB#
-    Dim bR#, bG#, bB#
     Dim rR#, rG#, rB#
 
 
-    bR = 0.5 + 0.5 * Cos(V * 2 * PI2)
-    bG = 0.5 + 0.25 * Cos(V * 1 * PI2)
-    bB = 0.5 + 0.5 * Cos(V * PI2)
+    OvR = 0.5 + 0.5 * Cos(V * 2 * PI2)
+    OvG = 0.5 + 0.25 * Cos(V * 1 * PI2)
+    OvB = 0.5 + 0.5 * Cos(V * PI2)
 
 
     Dim Bytes()   As Byte
@@ -547,9 +583,9 @@ Public Sub SETOverlay(V As Double)
             iG = Bytes(X + 1, Y) * Inv255
             iR = Bytes(X + 2, Y) * Inv255
 
-            rR = BlendOverlay(iR, bR)
-            rG = BlendOverlay(iG, bG)
-            rB = BlendOverlay(iB, bB)
+            rR = BlendOverlay(iR, OvR)
+            rG = BlendOverlay(iG, OvG)
+            rB = BlendOverlay(iB, OvB)
 
             Bytes(X + 0, Y) = rB * 255
             Bytes(X + 1, Y) = rG * 255
@@ -572,4 +608,19 @@ Public Function BlendOverlay(ByVal base As Double, ByVal blend As Double) As Dou
     Else
         BlendOverlay = 1# - (2# * (1# - base) * (1# - blend))
     End If
+End Function
+
+Public Function BlendOverlayBYTE(ByVal base As Byte, ByVal blend As Double) As Byte
+
+    Dim dBase     As Double
+    Dim dBlendOverlay As Double
+
+    dBase = base * Inv255
+
+    If dBase < 0.5 Then
+        dBlendOverlay = 2# * dBase * blend
+    Else
+        dBlendOverlay = 1# - (2# * (1# - dBase) * (1# - blend))
+    End If
+    BlendOverlayBYTE = dBlendOverlay * 255
 End Function
