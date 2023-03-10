@@ -258,8 +258,6 @@ Public Sub SetupBACKGROUND()
 
     ' other TilesMAP
     ZETA = 0
-
-
     For Y = 0 To TH
         For X = 0 To TW
 
@@ -271,12 +269,12 @@ Public Sub SetupBACKGROUND()
                 'UPDATEZ      '********************************************************************************
 
                 UPDATEZ2 TX - 1 - TrX, TY - 1 - TrY, _
-                         TX + TILE(Idx).tSrf.Width - TrX, TY + TILE(Idx).tSrf.Height - TrY
+                         TILE(Idx).tSrf.Width, TILE(Idx).tSrf.Height
 
                 srf2Screen.CreateContext.RenderSurfaceContent srfbkg, 0, 0
             End If
 
-            ZETA = ZETA + 1 'X + Y
+            ZETA = ZETA + 1  'X + Y
 
         Next
     Next
@@ -301,14 +299,14 @@ Private Sub UPDATEZ()
     Next
 
 End Sub
-Private Sub UPDATEZ2(Xf&, Yf&, Xt&, Yt&)
+Private Sub UPDATEZ2(Xf&, Yf&, W&, H&)
 
     Dim X&, Y&
     Dim X4&
 
-    For X = Xf To Xt
+    For X = Xf To Xf + W
         X4 = X * 4
-        For Y = Yf To Yt
+        For Y = Yf To Yf + H
             If BYTESBackgr(X4 + 0, Y) <> BYTESScreen(X4 + 0, Y) Then Z(X, Y) = ZETA
             If BYTESBackgr(X4 + 1, Y) <> BYTESScreen(X4 + 1, Y) Then Z(X, Y) = ZETA
             If BYTESBackgr(X4 + 2, Y) <> BYTESScreen(X4 + 2, Y) Then Z(X, Y) = ZETA
@@ -417,7 +415,7 @@ Public Sub SetTile(Tidx&, pX#, pY#)
     ''    floor
     '    For Y = TH To 0 Step -1
     '        For X = 0 To TW Step 1
-    For Y = iy + 3 To iy - 3 Step -1
+    For Y = iy - 3 To iy + 3
         For X = iX - 3 To iX + 3
 
             Idx = 0
@@ -430,8 +428,8 @@ Public Sub SetTile(Tidx&, pX#, pY#)
     ''    ' other TilesMAP
     '    For Y = TH To 0 Step -1
     '        For X = 0 To TW Step 1
-    For Y = iy + 3 To iy - 3 Step -1
-        For X = iX - 3 To iX + 3
+    For Y = iy - 3 To iy + 3
+    For X = iX - 3 To iX + 3
             Idx = TilesMAP(X, Y).ImgIdx
 
             If X = iX And Y = iy Then
@@ -487,19 +485,22 @@ Public Sub SetTile2(Tidx&, pX#, pY#)
     TileXYtoScreen fX, fY, tfx, tfy
 
 
-
 '        XrefZ = TilesMAP(iX, iy).scrX + TILE(Tidx).offX + srf2Screen.Width * 0.5 + tfx - TrX
 '        YrefZ = TilesMAP(iX, iy).scrY + TILE(Tidx).offY + srf2Screen.Height * 0.5 + tfy - TrY
 
     XrefZ = TilesMAP(iX - 1, iy + 1).scrX - TILE(Tidx).offX * 0.5 + srf2Screen.Width * 0.5 + tfx - TrX
     YrefZ = TilesMAP(iX - 1, iy + 1).scrY + srf2Screen.Height * 0.5 + tfy - TrY
 
-    ZETA = Z(XrefZ, YrefZ)
+
 
     TX = TilesMAP(iX, iy).scrX + TILE(Tidx).offX + srf2Screen.Width * 0.5 + tfx - TrX
     TY = TilesMAP(iX, iy).scrY + TILE(Tidx).offY + srf2Screen.Height * 0.5 + tfy - TrY
     '        tmpCC.RenderSurfaceContent TILE(Tidx).tSrf, TX, TY
 
+'XrefZ = TX - TILE(Tidx).offX
+'YrefZ = TY - TILE(Tidx).offY
+
+    ZETA = Z(XrefZ, YrefZ)
 
     TX4 = Int(TX) * 4
 
@@ -526,7 +527,7 @@ Public Sub SetTile2(Tidx&, pX#, pY#)
         X4 = X * 4
         For Y = 0 To TILE(Tidx).tSrf.Height - 1
         
-            If Z(X + TX, Y + TY) <= ZETA Then
+            If Z(X + TX, Y + TY) < ZETA Or Z(X + TX, Y + TY) = 0 Then
                 If BYTESTile(X4 + 3, Y) Then
                     'BYTESScreen(X4 + 0 + TX4, TY + Y) = BYTESTile(X4 + 0, Y)
                     'BYTESScreen(X4 + 1 + TX4, TY + Y) = BYTESTile(X4 + 1, Y)
