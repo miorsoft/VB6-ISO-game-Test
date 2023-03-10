@@ -74,12 +74,12 @@ Public Sub MAINLOOP()
             fMain.Caption = "Draw FPS: " & CNT - oCnt & "      (ESC and then window 'X' to quit)"
             oCnt = CNT
 
-DoEvents
+            DoEvents
 
         End Select
 
     Loop While DoLOOP
-Tick.RemoveByID tDRAW
-Tick.RemoveByID t1Sec
+    Tick.RemoveByID tDRAW
+    Tick.RemoveByID t1Sec
 
 End Sub
