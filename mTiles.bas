@@ -291,7 +291,6 @@ Private Sub UPDATEZ()
             If BYTESBackgr(X + 2, Y) <> BYTESScreen(X + 2, Y) Then Z(X \ 4, Y) = ZETA
         Next
     Next
-    DoEvents
 
 End Sub
 

@@ -69,17 +69,17 @@ Public Sub MAINLOOP()
             End If
 
 
-            DoEvents
 
         Case t1Sec
             fMain.Caption = "Draw FPS: " & CNT - oCnt & "      (ESC and then window 'X' to quit)"
             oCnt = CNT
 
+DoEvents
 
         End Select
 
     Loop While DoLOOP
-
-
+Tick.RemoveByID tDRAW
+Tick.RemoveByID t1Sec
 
 End Sub
