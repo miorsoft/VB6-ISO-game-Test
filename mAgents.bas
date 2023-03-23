@@ -92,23 +92,27 @@ Public Sub RenderAgent(AgentIdx&)
     TY = TilesMAP(iX, iy).scrY + TILE(Tidx).offY + srf2Screen.Height * 0.5 + tfy - TrY
 
 
-
     tmpCCagents.SetSourceSurface TILE(Tidx).tSrf, TX, TY
     tmpCCagents.MaskSurface MASKSRF(PosX + PosY + 0.5), -TrX, -TrY
 
     ' TEST with MASKSRF with Standard Alpha
-    ' tmpCCagents.RenderSurfaceContent TILE(Tidx).tSrf, TX, TY
-    ' tmpCCagents.RenderSurfaceContent MASKSRF(iX + iy + 2), -TrX, -TrY
+'     tmpCCagents.RenderSurfaceContent TILE(Tidx).tSrf, TX, TY
+'     tmpCCagents.RenderSurfaceContent MASKSRF(iX + iy + 2), -TrX, -TrY
 End Sub
 
 
 Public Sub RENDERAGENTS()
     Dim I         As Long
+
     Set tmpCCagents = srf2Screen.CreateContext
     tmpCCagents.RenderSurfaceContent srfbkg, 0, 0    '<<<<----------!!!!!!!!!!!
-         QuickSortAgent Agent(), 1, NA
+
     For I = 1 To NA
         Agent(I).XY = -Agent(I).X - Agent(I).Y
+    Next
+    QuickSortAgent Agent(), 1, NA
+
+    For I = 1 To NA
         RenderAgent Agent(I).DrawOrder
     Next
 End Sub
@@ -116,7 +120,7 @@ End Sub
 
 
 Public Sub MOVEAGENTS()
-    Const Speed   As Double = 0.04
+    Const Speed   As Double = 0.05
 
     Dim I         As Long
     Dim toX&, toY&

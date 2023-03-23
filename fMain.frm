@@ -21,7 +21,7 @@ Option Explicit
 
 Private Sub Form_Activate()
     Randomize Timer
-    InitTiles
+    INITTILES 25, 25
     SetUpAgents
 End Sub
 
@@ -29,7 +29,7 @@ End Sub
 
 Private Sub Form_Click()
 
-    InitTiles
+    INITTILES 25, 25
     SetUpAgents
     '
 

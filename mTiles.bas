@@ -53,8 +53,8 @@ Public TILE()     As tTileImg
 Public TW         As Long
 Public TH         As Long
 
-Private BYTESBackgr() As Byte
-Private BYTESScreen() As Byte
+'Private BYTESBackgr() As Byte
+'Private BYTESScreen() As Byte
 
 
 
@@ -79,7 +79,7 @@ Public Sub TileXYtoScreen(X#, Y#, scrX#, scrY#)
 
 End Sub
 
-Public Sub INITTILES()
+Public Sub INITTILES(NcellX&, NcellY&)
     Dim X&, Y&
 
     Dim ceX       As Double
@@ -94,8 +94,8 @@ Public Sub INITTILES()
     Dim tmpCC     As cCairoContext
 
 
-    TW = 20                       '''''' TILEMAP Size -.<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-    TH = 25
+    TW = NcellX                       '''''' TILEMAP Size -.<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+    TH = NcellY
 
     Set tmpSrf = Cairo.CreateSurface(81, 36 * 4, ImageSurface)
     Set tmpCC = tmpSrf.CreateContext
@@ -205,12 +205,12 @@ Public Sub INITTILES()
 
     SetupBACKGROUND
     SetUpMASKS
-
+    
     srf2Screen.CreateContext.RenderSurfaceContent srfbkg, 0, 0
-
 
     bgCX = srfbkg.Width * 0.5
     bgCY = srfbkg.Height * 0.5
+
 
 
 End Sub
@@ -238,8 +238,8 @@ Public Sub SetupBACKGROUND()
 
     bgCC.Save
 
-    srfbkg.BindToArray BYTESBackgr
-    srf2Screen.BindToArray BYTESScreen
+'    srfbkg.BindToArray BYTESBackgr
+'    srf2Screen.BindToArray BYTESScreen
 
 
     TileXYtoScreen CamPosX, CamPosY, TrX, TrY
@@ -271,11 +271,7 @@ Public Sub SetupBACKGROUND()
                 TX = TilesMAP(X, Y).scrX + TILE(Idx).offX + srfbkg.Width * 0.5
                 TY = TilesMAP(X, Y).scrY + TILE(Idx).offY + srfbkg.Height * 0.5
                 bgCC.RenderSurfaceContent TILE(Idx).tSrf, TX, TY
-                ''                'UPDATEZ      '********************************************************************************
-                ''
-                ''                UPDATEZ2 TX - 1 - TrX, TY - 1 - TrY, _
-                 ''                         TILE(Idx).tSrf.Width, TILE(Idx).tSrf.Height
-                ''
+
                 ''                srf2Screen.CreateContext.RenderSurfaceContent srfbkg, 0, 0
             End If
 
@@ -514,12 +510,14 @@ Public Sub SetUpMASKS()
     Dim Idx&
     Dim TX#, TY#
 
+    Const EXTRA   As Double = 1.25  ' Don't know why but this is needed (bug to fix somewhere)
 
     ReDim MASKSRF(TW + TH)
     ReDim MASKCC(TW + TH)
 
+
     For I = 0 To UBound(MASKSRF)
-        Set MASKSRF(I) = Cairo.CreateSurface(srfbkg.Width, srfbkg.Height, ImageSurface)
+        Set MASKSRF(I) = Cairo.CreateSurface(srfbkg.Width, srfbkg.Height * EXTRA, ImageSurface)
         Set MASKCC(I) = MASKSRF(I).CreateContext
     Next
     '----------------FLOOR
@@ -548,6 +546,7 @@ Public Sub SetUpMASKS()
         For Y = 0 To TH
             For X = 0 To TW
                 If X + Y >= K Then
+                If X + Y <= K + 8 Then 'Useless to go to bottm (Ok Just a few for Tiles Heights)
                     Idx = TilesMAP(X, Y).ImgIdx
                     If Idx Then
                         TX = TilesMAP(X, Y).scrX + TILE(Idx).offX + srfbkg.Width * 0.5
@@ -555,6 +554,8 @@ Public Sub SetUpMASKS()
                         MASKCC(K).RenderSurfaceContent TILE(Idx).tSrf, TX, TY
                     End If
                 End If
+                End If
+                
             Next
         Next
         K = K - 1
