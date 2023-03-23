@@ -38,7 +38,7 @@ Public Sub MAINLOOP()
 
     Set Tick = New clsTick
 
-    tDRAW = Tick.Add(120)    '<---- set desired draw FPS
+    tDRAW = Tick.Add(60)          '<---- set desired draw FPS
     t1Sec = Tick.Add(1)
 
     DoLOOP = True
@@ -50,30 +50,36 @@ Public Sub MAINLOOP()
         Select Case Tick.WaitForNext
         Case tDRAW
 
-            SetTile2 14, CamPosX, CamPosY
+            'SetTile3 14, CamPosX, CamPosY
+            RENDERAGENTS
+
+            '            Agent(1).X = CamPosX
+            '            Agent(1).Y = CamPosY
+            CamPosX = CamPosX * 0.99 + 0.01 * Agent(1).X
+            CamPosY = CamPosY * 0.99 + 0.01 * Agent(1).Y
 
 
+            DrawSCREEN
 
-            DRAWBackGround
+            MOVEAGENTS
 
-
-            If (CNT \ 1300) Mod 2 = 0 Then
-                CamPosX = TW * 0.5 + Cos(Timer * 0.4) * TW * 0.35
-                CamPosY = TH * 0.5    ' + Cos(Timer * 0.5) * 5
-            Else
-                CamPosX = TW * 0.5    '+ Cos(Timer * 0.5) * 5
-                CamPosY = TH * 0.5 + Cos(Timer * 0.4) * TH * 0.35
-            End If
-
-            If (CNT And 1023) = 0 Then
-                SETOverlay overlayValue
-                overlayValue = overlayValue + 0.01: If overlayValue > 1 Then overlayValue = overlayValue - 1
-            End If
+''            If (CNT \ 1300) Mod 2 = 0 Then
+''                CamPosX = TW * 0.5 + Cos(Timer * 0.4) * TW * 0.35
+''                CamPosY = TH * 0.5    ' + Cos(Timer * 0.5) * 5
+''            Else
+''                CamPosX = TW * 0.5    '+ Cos(Timer * 0.5) * 5
+''                CamPosY = TH * 0.5 + Cos(Timer * 0.4) * TH * 0.35
+''            End If
+            ''
+            ''            If (CNT And 1023) = 0 Then
+            ''                SETOverlay overlayValue
+            ''                overlayValue = overlayValue + 0.01: If overlayValue > 1 Then overlayValue = overlayValue - 1
+            ''            End If
 
             CNT = CNT + 1
 
         Case t1Sec
-            fMain.Caption = "Draw FPS: " & CNT - oCnt & "      (ESC and then window 'X' to quit)"
+            fMain.Caption = "Draw FPS: " & CNT - oCnt & "      (ESC and then window 'X' to quit)   (Click Form to Regenerate)"
             oCnt = CNT
 
             DoEvents

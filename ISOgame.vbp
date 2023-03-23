@@ -5,6 +5,7 @@ Form=fMain.frm
 Module=mMain; mMain.bas
 Module=mTiles; mTiles.bas
 Class=clsTick; clsTick.cls
+Module=mAgents; mAgents.bas
 IconForm="fMain"
 Startup="fMain"
 HelpFile=""

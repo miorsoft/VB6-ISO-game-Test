@@ -36,11 +36,11 @@ Private Const QS_ALLEVENTS = (QS_INPUT Or QS_POSTMESSAGE Or QS_TIMER Or QS_PAINT
 
 ' tick data
 Private Type TICKS
-    ID            As Long    ' identifier ID
-    Count         As Long    ' number of ticks done
-    Ending        As Currency    ' the next ending tick
-    Freq          As Currency    ' tick frequency
-    NoSkip        As Boolean    ' should always (atleast try) to stay on time?
+    ID            As Long         ' identifier ID
+    Count         As Long         ' number of ticks done
+    Ending        As Currency     ' the next ending tick
+    Freq          As Currency     ' tick frequency
+    NoSkip        As Boolean      ' should always (atleast try) to stay on time?
 End Type
 
 ' internal variables

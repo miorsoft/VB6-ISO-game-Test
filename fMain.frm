@@ -10,6 +10,7 @@ Begin VB.Form fMain
    ScaleMode       =   3  'Pixel
    ScaleWidth      =   625
    StartUpPosition =   2  'CenterScreen
+   WindowState     =   2  'Maximized
 End
 Attribute VB_Name = "fMain"
 Attribute VB_GlobalNameSpace = False
@@ -21,6 +22,7 @@ Option Explicit
 Private Sub Form_Activate()
     Randomize Timer
     InitTiles
+    SetUpAgents
 End Sub
 
 
@@ -28,6 +30,7 @@ End Sub
 Private Sub Form_Click()
 
     InitTiles
+    SetUpAgents
     '
 
 
