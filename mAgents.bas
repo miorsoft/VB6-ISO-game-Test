@@ -41,7 +41,7 @@ Public Sub SetUpAgents()
             X = 1 + Int(Rnd * (TW - 2)): Y = 1 + Int(Rnd * (TH - 2))
         Loop While TilesMAP(X, Y).ImgIdx <> 0
 
-        AddAgent X, Y, 1 + Rnd * 8
+        AddAgent X, Y, 1 + Rnd * 15
         AgentRandomDir I
 
     Next

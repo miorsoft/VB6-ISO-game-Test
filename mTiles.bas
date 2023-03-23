@@ -92,15 +92,18 @@ Public Sub INITTILES(NcellX&, NcellY&)
 
     Dim tmpSrf    As cCairoSurface
     Dim tmpCC     As cCairoContext
+    Dim LineW     As Double
+    Dim XX#, YY#
+    Dim Shape     As Long
 
-
-    TW = NcellX                       '''''' TILEMAP Size -.<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+    TW = NcellX                   '''''' TILEMAP Size -.<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     TH = NcellY
 
     Set tmpSrf = Cairo.CreateSurface(81, 36 * 4, ImageSurface)
-    Set tmpCC = tmpSrf.CreateContext
+    '    Set tmpCC = tmpSrf.CreateContext
 
-    NtilesImg = 15
+
+    NtilesImg = 20                '15
     ReDim TILE(NtilesImg)
 
     TileXYtoScreen -0.5, -0.5, DX, DY
@@ -118,33 +121,74 @@ Public Sub INITTILES(NcellX&, NcellY&)
     For X = 0 To NtilesImg
         Set tmpSrf = Cairo.CreateSurface(81, 36 * 4, ImageSurface)
         Set tmpCC = tmpSrf.CreateContext
-
+        tmpCC.SetLineCap CAIRO_LINE_CAP_ROUND
 
         H = (X / NtilesImg) * 36 * 3
-
         cR = Rnd: cG = Rnd: cB = Rnd
-        tmpCC.MoveTo Ax, Ay - H
-        tmpCC.LineTo Bx, By - H
-        tmpCC.LineTo cX, cY - H
-        tmpCC.LineTo DX, DY - H
-        tmpCC.SetSourceRGB cR, cG, cB
-        tmpCC.Fill
 
-        If H Then
-            tmpCC.MoveTo Bx, By - H
-            tmpCC.LineTo Ax, Ay - H
-            tmpCC.LineTo Ax, Ay
-            tmpCC.LineTo Bx, By
-            tmpCC.SetSourceRGB cR * 0.8, cG * 0.8, cB * 0.8
-            tmpCC.Fill
+        Shape = Int(Rnd * 3)
+        If H = 0 Or H > 28 * 3 Then Shape = 0
+        
+        Select Case Shape
+        Case 0
 
-            tmpCC.MoveTo cX, cY - H
-            tmpCC.LineTo cX, cY
-            tmpCC.LineTo Bx, By
+            tmpCC.MoveTo Ax, Ay - H
             tmpCC.LineTo Bx, By - H
-            tmpCC.SetSourceRGB cR * 0.4, cG * 0.4, cB * 0.4
+            tmpCC.LineTo cX, cY - H
+            tmpCC.LineTo DX, DY - H
+            tmpCC.SetSourceRGB cR, cG, cB
             tmpCC.Fill
-        End If
+
+            If H Then
+
+                tmpCC.MoveTo Bx, By - H
+                tmpCC.LineTo Ax, Ay - H
+                tmpCC.LineTo Ax, Ay
+                tmpCC.LineTo Bx, By
+                tmpCC.SetSourceRGB cR * 0.8, cG * 0.8, cB * 0.8
+                tmpCC.Fill
+
+                tmpCC.MoveTo cX, cY - H
+                tmpCC.LineTo cX, cY
+                tmpCC.LineTo Bx, By
+                tmpCC.LineTo Bx, By - H
+                tmpCC.SetSourceRGB cR * 0.4, cG * 0.4, cB * 0.4
+                tmpCC.Fill
+
+
+
+
+            End If
+        Case 1                    'Veritical lines
+            LineW = 10 + Rnd * 40
+            XX = (Ax + Bx + cX + DX) * 0.25
+            YY = (Ay + By + cY + DY) * 0.25 - LineW * 0.5
+
+            tmpCC.SetSourceRGB 0, 0, 0
+
+            tmpCC.SetLineWidth LineW + 2
+            tmpCC.MoveTo XX, YY
+            tmpCC.LineTo XX, YY - H
+            tmpCC.Stroke
+            tmpCC.SetSourceRGB cR, cG, cB
+            tmpCC.SetLineWidth LineW
+            tmpCC.MoveTo XX, YY
+            tmpCC.LineTo XX, YY - H
+            tmpCC.Stroke
+        Case 2
+            tmpCC.SetSourceRGB cR * 0.8, cG * 0.8, cB * 0.8
+            tmpCC.MoveTo cX, cY
+            tmpCC.LineTo Bx, By
+            tmpCC.LineTo (Ax + cX) * 0.5, DY - H + LineW * 0.5
+            tmpCC.Fill
+            tmpCC.SetSourceRGB cR, cG, cB
+            tmpCC.MoveTo Ax, Ay
+            tmpCC.LineTo Bx, By
+            tmpCC.LineTo (Ax + cX) * 0.5, DY - H + LineW * 0.5
+
+            tmpCC.Fill
+        End Select
+
 
         '        Set TILE(X).tmpSrf = tmpSrf.CreateSimilar(CAIRO_CONTENT_COLOR_ALPHA, , , True)'<<< do not work....
 
@@ -181,8 +225,12 @@ Public Sub INITTILES(NcellX&, NcellY&)
     For X = 0 To TW
         For Y = 0 To TH
             With TilesMAP(X, Y)
-                .ImgIdx = Int(Rnd * (NtilesImg + 1))
+                .ImgIdx = 1 + Int(Rnd * NtilesImg)
                 If Rnd < 0.85 Then .ImgIdx = 0
+                
+                If X = 0 Or Y = 0 Or X = TW Or Y = TH Then .ImgIdx = 1 + Int(Rnd * NtilesImg)
+           
+                
                 TileXYtoScreen X * 1, Y * 1, .scrX, .scrY
             End With
         Next
@@ -205,7 +253,7 @@ Public Sub INITTILES(NcellX&, NcellY&)
 
     SetupBACKGROUND
     SetUpMASKS
-    
+
     srf2Screen.CreateContext.RenderSurfaceContent srfbkg, 0, 0
 
     bgCX = srfbkg.Width * 0.5
@@ -546,7 +594,7 @@ Public Sub SetUpMASKS()
         For Y = 0 To TH
             For X = 0 To TW
                 If X + Y >= K Then
-                If X + Y <= K + 8 Then 'Useless to go to bottm (Ok Just a few for Tiles Heights)
+                If X + Y <= K + 9 Then 'Useless to go to bottm (Ok Just a few for Tiles Heights)
                     Idx = TilesMAP(X, Y).ImgIdx
                     If Idx Then
                         TX = TilesMAP(X, Y).scrX + TILE(Idx).offX + srfbkg.Width * 0.5
