@@ -41,7 +41,7 @@ Public Sub SetUpAgents()
             X = 1 + Int(Rnd * (TW - 2)): Y = 1 + Int(Rnd * (TH - 2))
         Loop While TilesMAP(X, Y).ImgIdx <> 0
 
-        AddAgent X, Y, 1 + Rnd * 5
+        AddAgent X, Y, 1 + Rnd * 8
         AgentRandomDir I
 
     Next
@@ -106,9 +106,9 @@ Public Sub RENDERAGENTS()
     Dim I         As Long
     Set tmpCCagents = srf2Screen.CreateContext
     tmpCCagents.RenderSurfaceContent srfbkg, 0, 0    '<<<<----------!!!!!!!!!!!
+         QuickSortAgent Agent(), 1, NA
     For I = 1 To NA
         Agent(I).XY = -Agent(I).X - Agent(I).Y
-        QuickSortAgent Agent(), 1, NA
         RenderAgent Agent(I).DrawOrder
     Next
 End Sub
