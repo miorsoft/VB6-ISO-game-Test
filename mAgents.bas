@@ -36,14 +36,11 @@ Public Sub SetUpAgents()
     NA = 0
 
     For I = 1 To 10
-
         Do
             X = 1 + Int(Rnd * (TW - 2)): Y = 1 + Int(Rnd * (TH - 2))
         Loop While TilesMAP(X, Y).ImgIdx <> 0
-
         AddAgent X, Y, 1 + Rnd * 15
         AgentRandomDir I
-
     Next
 
 End Sub
@@ -96,8 +93,8 @@ Public Sub RenderAgent(AgentIdx&)
     tmpCCagents.MaskSurface MASKSRF(PosX + PosY + 0.5), -TrX, -TrY
 
     ' TEST with MASKSRF with Standard Alpha
-'     tmpCCagents.RenderSurfaceContent TILE(Tidx).tSrf, TX, TY
-'     tmpCCagents.RenderSurfaceContent MASKSRF(iX + iy + 2), -TrX, -TrY
+    '     tmpCCagents.RenderSurfaceContent TILE(Tidx).tSrf, TX, TY
+    '     tmpCCagents.RenderSurfaceContent MASKSRF(iX + iy + 2), -TrX, -TrY
 End Sub
 
 

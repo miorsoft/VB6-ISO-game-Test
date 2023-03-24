@@ -63,13 +63,13 @@ Public Sub MAINLOOP()
 
             MOVEAGENTS
 
-''            If (CNT \ 1300) Mod 2 = 0 Then
-''                CamPosX = TW * 0.5 + Cos(Timer * 0.4) * TW * 0.35
-''                CamPosY = TH * 0.5    ' + Cos(Timer * 0.5) * 5
-''            Else
-''                CamPosX = TW * 0.5    '+ Cos(Timer * 0.5) * 5
-''                CamPosY = TH * 0.5 + Cos(Timer * 0.4) * TH * 0.35
-''            End If
+            ''            If (CNT \ 1300) Mod 2 = 0 Then
+            ''                CamPosX = TW * 0.5 + Cos(Timer * 0.4) * TW * 0.35
+            ''                CamPosY = TH * 0.5    ' + Cos(Timer * 0.5) * 5
+            ''            Else
+            ''                CamPosX = TW * 0.5    '+ Cos(Timer * 0.5) * 5
+            ''                CamPosY = TH * 0.5 + Cos(Timer * 0.4) * TH * 0.35
+            ''            End If
             ''
             ''            If (CNT And 1023) = 0 Then
             ''                SETOverlay overlayValue

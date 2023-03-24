@@ -48,6 +48,7 @@ End Type
 Public TilesMAP() As tTile
 
 Public TILE()     As tTileImg
+Public TILEShad() As tTileImg
 
 
 Public TW         As Long
@@ -65,6 +66,8 @@ Public MASKCC()   As cCairoContext
 Attribute MASKCC.VB_VarUserMemId = 1073741837
 
 Public ovR#, ovG#, ovB#
+Attribute ovG.VB_VarUserMemId = 1073741830
+Attribute ovB.VB_VarUserMemId = 1073741830
 
 
 Public Sub TileXYtoScreen(X#, Y#, scrX#, scrY#)
@@ -128,7 +131,7 @@ Public Sub INITTILES(NcellX&, NcellY&)
 
         Shape = Int(Rnd * 3)
         If H = 0 Or H > 28 * 3 Then Shape = 0
-        
+
         Select Case Shape
         Case 0
 
@@ -227,10 +230,10 @@ Public Sub INITTILES(NcellX&, NcellY&)
             With TilesMAP(X, Y)
                 .ImgIdx = 1 + Int(Rnd * NtilesImg)
                 If Rnd < 0.85 Then .ImgIdx = 0
-                
+
                 If X = 0 Or Y = 0 Or X = TW Or Y = TH Then .ImgIdx = 1 + Int(Rnd * NtilesImg)
-           
-                
+
+
                 TileXYtoScreen X * 1, Y * 1, .scrX, .scrY
             End With
         Next
@@ -251,6 +254,8 @@ Public Sub INITTILES(NcellX&, NcellY&)
     Set srfbkg = Cairo.CreateSurface(Ax - cX, By - DY, ImageSurface)
     Set srf2Screen = Cairo.CreateSurface(srfbkg.Width, srfbkg.Height, ImageSurface)
 
+    BuildTileShadow
+
     SetupBACKGROUND
     SetUpMASKS
 
@@ -263,6 +268,65 @@ Public Sub INITTILES(NcellX&, NcellY&)
 
 End Sub
 
+
+Private Sub BuildTileShadow()
+    Dim I         As Long
+    Dim W&, H&
+    Dim Size&
+    Dim M         As cCairoMatrix
+
+    Dim SSrf      As cCairoSurface
+    Dim SCC       As cCairoContext
+    Dim N&
+    N = UBound(TILE)
+
+
+    ReDim TILEShad(N)
+
+    For I = 1 To N
+        W = TILE(I).tSrf.Width
+        H = TILE(I).tSrf.Height
+        If W > H Then Size = W Else: Size = H
+        Size = Size * 3           '4
+
+        Set SSrf = Cairo.CreateSurface(Size, Size, ImageSurface)
+        Set SCC = SSrf.CreateContext
+
+        Set M = SCC.Matrix.ResetToIdentity
+
+        'SCC.TranslateDrawings -TILE(I).offX, -TILE(I).offY
+        SCC.TranslateDrawings Size * 0.5, Size * 0.5
+
+        SCC.ScaleDrawings 1, 0.5
+        M.SkewXDeg -45
+        
+        SCC.MatrixAddTransform M
+
+        SCC.SetSourceSurface TILE(I).tSrf, TILE(I).offX, TILE(I).offY
+        SCC.Paint
+
+        SCC.MatrixResetToIdentity
+'''''        SCC.SetSourceColor vbWhite
+'''''        SCC.Rectangle 0, 0, Size, Size
+'''''        SCC.Stroke
+
+        Set TILEShad(I).tSrf = Cairo.CreateSurface(Size, Size, ImageSurface)
+        With TILEShad(I).tSrf.CreateContext
+            .SetSourceRGB 0.33, 0.33, 0.33
+            .MaskSurface SSrf
+        End With
+
+        TILEShad(I).offX = -Size * 0.5
+        TILEShad(I).offY = -Size * 0.5
+
+        'SSrf.DrawToDC fMain.hDC
+        TILEShad(I).tSrf.DrawToDC fMain.hDC
+
+        DoEvents
+
+    Next
+
+End Sub
 
 
 
@@ -286,8 +350,8 @@ Public Sub SetupBACKGROUND()
 
     bgCC.Save
 
-'    srfbkg.BindToArray BYTESBackgr
-'    srf2Screen.BindToArray BYTESScreen
+    '    srfbkg.BindToArray BYTESBackgr
+    '    srf2Screen.BindToArray BYTESScreen
 
 
     TileXYtoScreen CamPosX, CamPosY, TrX, TrY
@@ -308,6 +372,20 @@ Public Sub SetupBACKGROUND()
             bgCC.RenderSurfaceContent TILE(Idx).tSrf, TX, TY
         Next
     Next
+
+    'SHADOWS
+    For X = 0 To TW
+        For Y = 0 To TH
+            Idx = TilesMAP(X, Y).ImgIdx
+            If Idx Then
+                TX = TilesMAP(X, Y).scrX + TILEShad(Idx).offX + srfbkg.Width * 0.5
+                TY = TilesMAP(X, Y).scrY + TILEShad(Idx).offY + srfbkg.Height * 0.5
+                bgCC.RenderSurfaceContent TILEShad(Idx).tSrf, TX, TY
+            End If
+        Next
+    Next
+
+
 
     ' other TilesMAP
 
@@ -558,7 +636,7 @@ Public Sub SetUpMASKS()
     Dim Idx&
     Dim TX#, TY#
 
-    Const EXTRA   As Double = 1.25  ' Don't know why but this is needed (bug to fix somewhere)
+    Const EXTRA   As Double = 1.25    ' Don't know why but this is needed (bug to fix somewhere)
 
     ReDim MASKSRF(TW + TH)
     ReDim MASKCC(TW + TH)
@@ -594,16 +672,16 @@ Public Sub SetUpMASKS()
         For Y = 0 To TH
             For X = 0 To TW
                 If X + Y >= K Then
-                If X + Y <= K + 9 Then 'Useless to go to bottm (Ok Just a few for Tiles Heights)
-                    Idx = TilesMAP(X, Y).ImgIdx
-                    If Idx Then
-                        TX = TilesMAP(X, Y).scrX + TILE(Idx).offX + srfbkg.Width * 0.5
-                        TY = TilesMAP(X, Y).scrY + TILE(Idx).offY + srfbkg.Height * 0.5
-                        MASKCC(K).RenderSurfaceContent TILE(Idx).tSrf, TX, TY
+                    If X + Y <= K + 9 Then    'Useless to go to bottm (Ok Just a few for Tiles Heights)
+                        Idx = TilesMAP(X, Y).ImgIdx
+                        If Idx Then
+                            TX = TilesMAP(X, Y).scrX + TILE(Idx).offX + srfbkg.Width * 0.5
+                            TY = TilesMAP(X, Y).scrY + TILE(Idx).offY + srfbkg.Height * 0.5
+                            MASKCC(K).RenderSurfaceContent TILE(Idx).tSrf, TX, TY
+                        End If
                     End If
                 End If
-                End If
-                
+
             Next
         Next
         K = K - 1
