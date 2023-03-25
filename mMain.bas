@@ -80,7 +80,7 @@ Public Sub MAINLOOP()
             CNT = CNT + 1
 
         Case t1Sec
-            fMain.Caption = "Draw FPS: " & CNT - oCnt & "  TileMap Size: " & (TW + 1) & "x" & TH + 1 & "      (ESC and then window 'X' to quit)   (Click Form to Regenerate)"
+            fMain.Caption = "Draw FPS: " & CNT - oCnt & "  TileMap Size: " & (TW + 1) & " x" & TH + 1 & "  Moving objs:" & NA & "      (ESC and then window 'X' to quit)   (Click Form to Regenerate)"
             oCnt = CNT
 
             DoEvents

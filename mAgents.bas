@@ -37,7 +37,7 @@ Public Sub SetUpAgents()
     Dim X#, Y#
     NA = 0
 
-    For I = 1 To 10
+    For I = 1 To 15
         Do
             X = 1 + Int(Rnd * (TW - 2)): Y = 1 + Int(Rnd * (TH - 2))
         Loop While TilesMAP(X, Y).ImgIdx <> 0
