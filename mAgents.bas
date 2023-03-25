@@ -10,6 +10,8 @@ Public Type tAgent
     TileIdx       As Long
     DrawOrder     As Long
     XY            As Double
+    Speed As Double
+    
 End Type
 
 Public Agent()    As tAgent
@@ -53,7 +55,50 @@ Public Sub AddAgent(PosX#, PosY#, TileIdx As Long)
         .Y = PosY
         .TileIdx = TileIdx
         .DrawOrder = NA
+        If NA = 1 Then
+            .Speed = 0.08
+        Else
+            .Speed = 0.01 + Rnd * 0.15
+        End If
+
     End With
+End Sub
+
+
+Public Sub RenderAgentShadow(AgentIdx&)
+'Exit Sub
+
+
+    Dim fX#, fY#
+    Dim tfx#, tfy#
+
+    Dim TX#, TY#
+    Dim TrX#, TrY#
+
+    Dim iX&, iy&
+
+    Dim Tidx      As Long
+    Dim PosX#, PosY#
+
+    Tidx = Agent(AgentIdx).TileIdx
+    PosX = Agent(AgentIdx).X
+    PosY = Agent(AgentIdx).Y
+
+    TileXYtoScreen TW * 0.5, TH * 0.5, TrX, TrY
+
+    iX = Int(PosX)
+    iy = Int(PosY)
+    fX = PosX - iX
+    fY = PosY - iy
+
+    TileXYtoScreen fX, fY, tfx, tfy
+
+    TX = TilesMAP(iX, iy).scrX + TILEShad(Tidx).offX + srf2Screen.Width * 0.5 + tfx - TrX
+    TY = TilesMAP(iX, iy).scrY + TILEShad(Tidx).offY + srf2Screen.Height * 0.5 + tfy - TrY
+
+    tmpCCagents.SetSourceSurface TILEShad(Tidx).tSrf, TX, TY
+    tmpCCagents.MaskSurface ShadowsMaskSrf, -TrX, -TrY
+    
 
 End Sub
 
@@ -84,9 +129,8 @@ Public Sub RenderAgent(AgentIdx&)
 
     TileXYtoScreen fX, fY, tfx, tfy
 
-
-    TX = TilesMAP(iX, iy).scrX + TILE(Tidx).offX + srf2Screen.Width * 0.5 + tfx - TrX
-    TY = TilesMAP(iX, iy).scrY + TILE(Tidx).offY + srf2Screen.Height * 0.5 + tfy - TrY
+     TX = TilesMAP(iX, iy).scrX + TILE(Tidx).offX + srf2Screen.Width * 0.5 + tfx - TrX
+     TY = TilesMAP(iX, iy).scrY + TILE(Tidx).offY + srf2Screen.Height * 0.5 + tfy - TrY
 
 
     tmpCCagents.SetSourceSurface TILE(Tidx).tSrf, TX, TY
@@ -98,7 +142,7 @@ Public Sub RenderAgent(AgentIdx&)
 End Sub
 
 
-Public Sub RENDERAGENTS()
+Public Sub RENDERallAgents()
     Dim I         As Long
 
     Set tmpCCagents = srf2Screen.CreateContext
@@ -106,6 +150,7 @@ Public Sub RENDERAGENTS()
 
     For I = 1 To NA
         Agent(I).XY = -Agent(I).X - Agent(I).Y
+       ' RenderAgentShadow I
     Next
     QuickSortAgent Agent(), 1, NA
 
@@ -117,8 +162,6 @@ End Sub
 
 
 Public Sub MOVEAGENTS()
-    Const Speed   As Double = 0.05
-
     Dim I         As Long
     Dim toX&, toY&
     For I = 1 To NA
@@ -134,13 +177,13 @@ Public Sub MOVEAGENTS()
             toY = .Y + .dirY * 0.5
 
             If TilesMAP(toX, toY).ImgIdx Then
-                .X = .X - .dirX * Speed
-                .Y = .Y - .dirY * Speed
+                .X = .X - .dirX * .Speed
+                .Y = .Y - .dirY * .Speed
                 AgentRandomDir I
             End If
 
-            .X = .X + .dirX * Speed
-            .Y = .Y + .dirY * Speed
+            .X = .X + .dirX * .Speed
+            .Y = .Y + .dirY * .Speed
 
 
         End With

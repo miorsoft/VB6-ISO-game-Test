@@ -21,7 +21,7 @@ Option Explicit
 
 
 Public Const tileW As Long = 50
-Public Const tileH As Long = 25
+Public Const tileH As Long = 26
 Public Const XIncrement As Long = 31    '31
 Public Const YIncrement As Long = 11    '11
 
@@ -64,6 +64,8 @@ Public MASKSRF()  As cCairoSurface
 Attribute MASKSRF.VB_VarUserMemId = 1073741836
 Public MASKCC()   As cCairoContext
 Attribute MASKCC.VB_VarUserMemId = 1073741837
+Public ShadowsMaskSrf As cCairoSurface
+
 
 Public ovR#, ovG#, ovB#
 Attribute ovG.VB_VarUserMemId = 1073741830
@@ -71,14 +73,16 @@ Attribute ovB.VB_VarUserMemId = 1073741830
 
 
 Public Sub TileXYtoScreen(X#, Y#, scrX#, scrY#)
-'    scrX = (X + Y) * (tileW * 0.5)
-'    scrY = (Y - X) * (tileH * 0.5)
+
+' Isometric
+'    scrX = (X - Y) * (tileW * 0.5)
+'    scrY = (Y + X) * (tileH * 0.5)
+
+    'trimetric
 
     scrX = tileW * X - Y * XIncrement
     scrY = tileH * Y + X * YIncrement
 
-    '    scrX = tileW * X + Y * XIncrement
-    '    scrY = -tileH * Y + X * YIncrement
 
 End Sub
 
@@ -163,7 +167,7 @@ Public Sub INITTILES(NcellX&, NcellY&)
 
             End If
         Case 1                    'Veritical lines
-            LineW = 10 + Rnd * 40
+            LineW = 5 + Rnd * tileW * 0.5
             XX = (Ax + Bx + cX + DX) * 0.25
             YY = (Ay + By + cY + DY) * 0.25 - LineW * 0.5
 
@@ -215,7 +219,7 @@ Public Sub INITTILES(NcellX&, NcellY&)
     '''        Srf.DrawToDC fMain.hDC
 
 
-    LoadTile App.Path & "\PNG\tree_PNG212.png"
+'    LoadTile App.Path & "\PNG\tree_PNG212.png"
     LoadTile App.Path & "\PNG\tree_PNG3470.png"
     LoadTile App.Path & "\PNG\tree_PNG3477.png"
 
@@ -229,7 +233,7 @@ Public Sub INITTILES(NcellX&, NcellY&)
         For Y = 0 To TH
             With TilesMAP(X, Y)
                 .ImgIdx = 1 + Int(Rnd * NtilesImg)
-                If Rnd < 0.85 Then .ImgIdx = 0
+                If Rnd < 0.9 Then .ImgIdx = 0
 
                 If X = 0 Or Y = 0 Or X = TW Or Y = TH Then .ImgIdx = 1 + Int(Rnd * NtilesImg)
 
@@ -298,7 +302,7 @@ Private Sub BuildTileShadow()
         SCC.TranslateDrawings Size * 0.5, Size * 0.5
 
         SCC.ScaleDrawings 1, 0.5
-        M.SkewXDeg -45
+        M.SkewXDeg 22
         
         SCC.MatrixAddTransform M
 
@@ -421,8 +425,19 @@ Private Sub LoadTile(FN As String)
     Dim W#, H#
     Dim TS        As cCairoSurface
 
+    Dim Ax#, Bx#, cX#, DX#
+    Dim Ay#, By#, cY#, DY#
+
+
+    TileXYtoScreen -0.5, -0.5, DX, DY
+    TileXYtoScreen -0.5, 0.5, Ax, Ay
+    TileXYtoScreen 0.5, 0.5, Bx, By
+    TileXYtoScreen 0.5, -0.5, cX, cY
+
+
     NtilesImg = NtilesImg + 1
     ReDim Preserve TILE(NtilesImg)
+
 
     With TILE(NtilesImg)
 
@@ -439,8 +454,8 @@ Private Sub LoadTile(FN As String)
         End If
 
         Set .tSrf = Cairo.ImageList.AddImage("tmp2", FN, W, H)
-        .offX = -W * 0.5 - 40.5
-        .offY = -H + 18 - 9
+        .offX = -W * 0.5 - (cX - Ax) * 0.5
+        .offY = -H + (By - DY) * 0.5 - 9
     End With
 
     Cairo.ImageList.RemoveAll
@@ -461,7 +476,7 @@ Public Sub DrawSCREEN()
     ''    CC.Arc ScreenW * 0.5, ScreenH * 0.5, 11: CC.Fill
 
     Srf.DrawToDC fMainhDC
-    DoEvents
+'    DoEvents
 
 End Sub
 
@@ -672,7 +687,7 @@ Public Sub SetUpMASKS()
         For Y = 0 To TH
             For X = 0 To TW
                 If X + Y >= K Then
-                    If X + Y <= K + 9 Then    'Useless to go to bottm (Ok Just a few for Tiles Heights)
+                    If X + Y <= K + 14 Then    'Useless to go to bottm (Ok Just a few for Tiles Heights)
                         Idx = TilesMAP(X, Y).ImgIdx
                         If Idx Then
                             TX = TilesMAP(X, Y).scrX + TILE(Idx).offX + srfbkg.Width * 0.5
@@ -701,5 +716,30 @@ Public Sub SetUpMASKS()
         MASKSRF(I).ReleaseArray B
     Next
 
+    '-------------------- Shadows Global Mask
+
+    Set ShadowsMaskSrf = Cairo.CreateSurface(srfbkg.Width, srfbkg.Height * EXTRA, ImageSurface)
+    K = TW + TH
+    Do
+        For Y = 0 To TH
+            For X = 0 To TW
+                Idx = TilesMAP(X, Y).ImgIdx
+                If Idx Then
+                    TX = TilesMAP(X, Y).scrX + TILE(Idx).offX + srfbkg.Width * 0.5
+                    TY = TilesMAP(X, Y).scrY + TILE(Idx).offY + srfbkg.Height * 0.5
+                    ShadowsMaskSrf.CreateContext.RenderSurfaceContent TILE(Idx).tSrf, TX, TY
+                End If
+            Next
+        Next
+        K = K - 1
+    Loop While K >= 0
+
+    ShadowsMaskSrf.BindToArray B
+    For X = 0 To UBound(B, 1) Step 4
+        For Y = 0 To UBound(B, 2)
+            B(X + 3, Y) = 255 - B(X + 3, Y)
+        Next
+    Next
+    ShadowsMaskSrf.ReleaseArray B
 
 End Sub

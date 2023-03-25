@@ -51,7 +51,7 @@ Public Sub MAINLOOP()
         Case tDRAW
 
             'SetTile3 14, CamPosX, CamPosY
-            RENDERAGENTS
+            RENDERallAgents
 
             '            Agent(1).X = CamPosX
             '            Agent(1).Y = CamPosY

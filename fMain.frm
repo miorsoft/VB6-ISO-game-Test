@@ -1,6 +1,6 @@
 VERSION 5.00
 Begin VB.Form fMain 
-   Caption         =   "WAIT....  Computing Z"
+   Caption         =   "-"
    ClientHeight    =   7425
    ClientLeft      =   4155
    ClientTop       =   2115
