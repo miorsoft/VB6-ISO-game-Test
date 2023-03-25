@@ -29,6 +29,7 @@ Public srf2Screen As cCairoSurface
 Public bgCX       As Double
 Public bgCY       As Double
 
+Public DynObjShad As Boolean
 
 
 
@@ -79,7 +80,7 @@ Public Sub MAINLOOP()
             CNT = CNT + 1
 
         Case t1Sec
-            fMain.Caption = "Draw FPS: " & CNT - oCnt & "      (ESC and then window 'X' to quit)   (Click Form to Regenerate)"
+            fMain.Caption = "Draw FPS: " & CNT - oCnt & "  TileMap Size: " & (TW + 1) & "x" & TH + 1 & "      (ESC and then window 'X' to quit)   (Click Form to Regenerate)"
             oCnt = CNT
 
             DoEvents

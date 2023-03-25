@@ -19,9 +19,11 @@ Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
 Option Explicit
 
+
+
 Private Sub Form_Activate()
     Randomize Timer
-    INITTILES 22, 22
+    INITTILES 69, 69
     SetUpAgents
 End Sub
 
@@ -29,7 +31,7 @@ End Sub
 
 Private Sub Form_Click()
 
-    INITTILES 22, 22
+    INITTILES 69, 69
     SetUpAgents
     '
 

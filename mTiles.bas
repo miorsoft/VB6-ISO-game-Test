@@ -65,6 +65,9 @@ Attribute MASKSRF.VB_VarUserMemId = 1073741836
 Public MASKCC()   As cCairoContext
 Attribute MASKCC.VB_VarUserMemId = 1073741837
 Public ShadowsMaskSrf As cCairoSurface
+Public MaskSrfOffY() As Double
+Public MaskSrfOffX() As Double
+
 
 
 Public ovR#, ovG#, ovB#
@@ -75,13 +78,13 @@ Attribute ovB.VB_VarUserMemId = 1073741830
 Public Sub TileXYtoScreen(X#, Y#, scrX#, scrY#)
 
 ' Isometric
-'    scrX = (X - Y) * (tileW * 0.5)
-'    scrY = (Y + X) * (tileH * 0.5)
+    scrX = (X - Y) * (tileW * 0.5)
+    scrY = (Y + X) * (tileH * 0.5)
 
     'trimetric
 
-    scrX = tileW * X - Y * XIncrement
-    scrY = tileH * Y + X * YIncrement
+'    scrX = tileW * X - Y * XIncrement
+'    scrY = tileH * Y + X * YIncrement
 
 
 End Sub
@@ -651,39 +654,34 @@ Public Sub SetUpMASKS()
     Dim Idx&
     Dim TX#, TY#
 
+
     Const EXTRA   As Double = 1.25    ' Don't know why but this is needed (bug to fix somewhere)
 
     ReDim MASKSRF(TW + TH)
     ReDim MASKCC(TW + TH)
+    ReDim MaskSrfOffX(TW + TH)
+    ReDim MaskSrfOffY(TW + TH)
 
 
-    For I = 0 To UBound(MASKSRF)
-        Set MASKSRF(I) = Cairo.CreateSurface(srfbkg.Width, srfbkg.Height * EXTRA, ImageSurface)
-        Set MASKCC(I) = MASKSRF(I).CreateContext
-    Next
-    '----------------FLOOR
-    ''  K = TW + TH
-    ''    Do
-    ''        fMain.Caption = K: DoEvents
-    ''        For Y = 0 To TH
-    ''            For X = 0 To TW
-    ''                If X + Y >= K Then
-    ''                    Idx = TilesMAP(X, Y).ImgIdx
-    ''                    If Idx = 0 Then
-    ''                        TX = TilesMAP(X, Y).scrX + TILE(Idx).offX + srfbkg.Width * 0.5
-    ''                        TY = TilesMAP(X, Y).scrY + TILE(Idx).offY + srfbkg.Height * 0.5
-    ''                        MASKCC(K).RenderSurfaceContent TILE(Idx).tSrf, TX, TY
-    ''                    End If
-    ''                End If
-    ''            Next
-    ''        Next
-    ''        K = K - 1
-    ''    Loop While K >= 0
+    ''    For I = 0 To UBound(MASKSRF)
+    ''        Set MASKSRF(I) = Cairo.CreateSurface(srfbkg.Width, srfbkg.Height * EXTRA, ImageSurface)
+    ''        Set MASKCC(I) = MASKSRF(I).CreateContext
+    ''    Next
+
+
+    Dim MinY&, MaxY&
+    Dim MinX&, MaxX&
 
     '----------------OTHER
     K = TW + TH
     Do
-        fMain.Caption = K: DoEvents
+        Set MASKSRF(K) = Cairo.CreateSurface(srfbkg.Width, srfbkg.Height * EXTRA, ImageSurface)
+        Set MASKCC(K) = MASKSRF(K).CreateContext
+
+        fMain.Caption = "Generating Diagonal Mask " & K: DoEvents
+        MinY = 100000: MaxY = -100000
+        MinX = 100000: MaxX = -100000
+
         For Y = 0 To TH
             For X = 0 To TW
                 If X + Y >= K Then
@@ -693,14 +691,38 @@ Public Sub SetUpMASKS()
                             TX = TilesMAP(X, Y).scrX + TILE(Idx).offX + srfbkg.Width * 0.5
                             TY = TilesMAP(X, Y).scrY + TILE(Idx).offY + srfbkg.Height * 0.5
                             MASKCC(K).RenderSurfaceContent TILE(Idx).tSrf, TX, TY
+                            If TY < MinY Then MinY = TY
+                            If TY + TILE(Idx).tSrf.Height > MaxY Then MaxY = TY + TILE(Idx).tSrf.Height
+                            If TX < MinX Then MinX = TX
+                            If TX + TILE(Idx).tSrf.Width > MaxX Then MaxX = TX + TILE(Idx).tSrf.Width
+
                         End If
                     End If
                 End If
 
             Next
         Next
+        '        Debug.Print MinY, MaxY
+        Debug.Print MinX, MaxX
+
+
+        'Set MASKSRF(K) = MASKSRF(K).CropSurface(0, MinY, srfbkg.Width, MaxY - MinY)
+        Set MASKSRF(K) = MASKSRF(K).CropSurface(MinX, MinY, MaxX - MinX, MaxY - MinY)
+        MaskSrfOffX(K) = MinX
+        MaskSrfOffY(K) = MinY
+
+        Set MASKCC(K) = Nothing
+
         K = K - 1
     Loop While K >= 0
+
+    '-----------------------------------------
+
+
+
+    '-----------------------------------------
+
+
 
 
     ' NEGATE ALPHA-----
@@ -717,7 +739,7 @@ Public Sub SetUpMASKS()
     Next
 
     '-------------------- Shadows Global Mask
-
+    fMain.Caption = "Generating Mask for moving object shadows  (If Enabled 'DynObjShad' )"
     Set ShadowsMaskSrf = Cairo.CreateSurface(srfbkg.Width, srfbkg.Height * EXTRA, ImageSurface)
     K = TW + TH
     Do
