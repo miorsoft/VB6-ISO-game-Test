@@ -31,7 +31,10 @@ Public bgCY       As Double
 
 Public DynObjShad As Boolean
 
-
+Public Sub SETUPALL()
+    INITTILES 59, 59
+    SetUpAgents
+End Sub
 
 
 Public Sub MAINLOOP()
@@ -87,7 +90,9 @@ Public Sub MAINLOOP()
 
         End Select
 
+
     Loop While DoLOOP
+    
     Tick.RemoveByID tDRAW
     Tick.RemoveByID t1Sec
 

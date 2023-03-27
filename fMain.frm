@@ -21,18 +21,12 @@ Option Explicit
 
 
 
-Private Sub Form_Activate()
-    Randomize Timer
-    INITTILES 69, 69
-    SetUpAgents
-End Sub
 
 
 
 Private Sub Form_Click()
 
-    INITTILES 69, 69
-    SetUpAgents
+    SETUPALL
     '
 
 
@@ -53,6 +47,11 @@ Private Sub Form_Click()
 
 End Sub
 
+Private Sub Form_Load()
+'    DynObjShad = True
+
+End Sub
+
 Private Sub Form_QueryUnload(Cancel As Integer, UnloadMode As Integer)
     DoLOOP = False
 End Sub
@@ -66,8 +65,13 @@ Private Sub Form_Resize()
     Set Srf = Cairo.CreateSurface(ScreenW, ScreenH)
     Set CC = Srf.CreateContext
 
-    If Not DoLOOP Then MAINLOOP
+    Randomize Timer
 
+    If Not DoLOOP Then
+        SETUPALL
+        MAINLOOP
+
+    End If
 End Sub
 
 
@@ -77,5 +81,4 @@ End Sub
 
 Private Sub Form_Unload(Cancel As Integer)
     End
-
 End Sub

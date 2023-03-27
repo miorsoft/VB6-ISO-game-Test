@@ -67,7 +67,7 @@ End Sub
 
 Public Sub RenderAgentShadow(AgentIdx&)
 'Exit Sub
-
+Dim TI&
 
     Dim fX#, fY#
     Dim tfx#, tfy#
@@ -96,9 +96,16 @@ Public Sub RenderAgentShadow(AgentIdx&)
     TX = TilesMAP(iX, iy).scrX + TILEShad(Tidx).offX + srf2Screen.Width * 0.5 + tfx - TrX
     TY = TilesMAP(iX, iy).scrY + TILEShad(Tidx).offY + srf2Screen.Height * 0.5 + tfy - TrY
 
-    tmpCCagents.SetSourceSurface TILEShad(Tidx).tSrf, TX, TY
-    tmpCCagents.MaskSurface ShadowsMaskSrf, -TrX, -TrY
+'    tmpCCagents.SetSourceSurface TILEShad(Tidx).tSrf, TX, TY
+'    tmpCCagents.MaskSurface ShadowsMaskSrf, -TrX, -TrY
+
     
+    TI = ((iX + iy) \ 2) * 2
+    tmpCCagents.SetSourceSurface TILEShad(Tidx).tSrf, TX, TY
+    tmpCCagents.MaskSurface ShadowsMaskMap(TI).tSrf, _
+    -TrX + ShadowsMaskMap(TI).offX, -TrY + ShadowsMaskMap(TI).offY
+    
+
 
 End Sub
 
@@ -154,7 +161,7 @@ Public Sub RENDERallAgents()
 
     For I = 1 To NA
         Agent(I).XY = -Agent(I).X - Agent(I).Y
-    If DynObjShad Then RenderAgentShadow I
+        If DynObjShad Then RenderAgentShadow I
     Next
     QuickSortAgent Agent(), 1, NA
 

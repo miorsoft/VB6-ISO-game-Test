@@ -69,6 +69,9 @@ Public MaskSrfOffY() As Double
 Public MaskSrfOffX() As Double
 
 
+Public ShadowsMaskMap() As tTileImg
+
+
 
 Public ovR#, ovG#, ovB#
 Attribute ovG.VB_VarUserMemId = 1073741830
@@ -305,7 +308,7 @@ Private Sub BuildTileShadow()
         SCC.TranslateDrawings Size * 0.5, Size * 0.5
 
         SCC.ScaleDrawings 1, 0.5
-        M.SkewXDeg 22
+        M.SkewXDeg -22
         
         SCC.MatrixAddTransform M
 
@@ -737,31 +740,101 @@ Public Sub SetUpMASKS()
         Next
         MASKSRF(I).ReleaseArray B
     Next
+    '<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+If DynObjShad Then
+    '''        '-------------------- Shadows Global Mask
+    '''        fMain.Caption = "Generating Mask for moving object shadows  (If Enabled 'DynObjShad' )"
+    '''        Set ShadowsMaskSrf = Cairo.CreateSurface(srfbkg.Width, srfbkg.Height * EXTRA, ImageSurface)
+    '''        K = TW + TH
+    '''        Do
+    '''            For Y = 0 To TH
+    '''                For X = 0 To TW
+    '''                    Idx = TilesMAP(X, Y).ImgIdx
+    '''                    If Idx Then
+    '''                        TX = TilesMAP(X, Y).scrX + TILE(Idx).offX + srfbkg.Width * 0.5
+    '''                        TY = TilesMAP(X, Y).scrY + TILE(Idx).offY + srfbkg.Height * 0.5
+    '''                        ShadowsMaskSrf.CreateContext.RenderSurfaceContent TILE(Idx).tSrf, TX, TY
+    '''                    End If
+    '''                Next
+    '''            Next
+    '''            K = K - 1
+    '''        Loop While K >= 0
+    '''
+    '''        ShadowsMaskSrf.BindToArray B
+    '''        For X = 0 To UBound(B, 1) Step 4
+    '''            For Y = 0 To UBound(B, 2)
+    '''                B(X + 3, Y) = 255 - B(X + 3, Y)
+    '''            Next
+    '''        Next
+    '''        ShadowsMaskSrf.ReleaseArray B
+    '<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+    '<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
-    '-------------------- Shadows Global Mask
-    fMain.Caption = "Generating Mask for moving object shadows  (If Enabled 'DynObjShad' )"
-    Set ShadowsMaskSrf = Cairo.CreateSurface(srfbkg.Width, srfbkg.Height * EXTRA, ImageSurface)
+    ReDim ShadowsMaskMap(TW + TH)
     K = TW + TH
+    
     Do
+        fMain.Caption = "Generating DynObj Shadow Masks " & K: DoEvents
+        MinY = 100000: MaxY = -100000
+        MinX = 100000: MaxX = -100000
         For Y = 0 To TH
             For X = 0 To TW
-                Idx = TilesMAP(X, Y).ImgIdx
-                If Idx Then
-                    TX = TilesMAP(X, Y).scrX + TILE(Idx).offX + srfbkg.Width * 0.5
-                    TY = TilesMAP(X, Y).scrY + TILE(Idx).offY + srfbkg.Height * 0.5
-                    ShadowsMaskSrf.CreateContext.RenderSurfaceContent TILE(Idx).tSrf, TX, TY
+                If X + Y <= K + 14 + 4 Then
+                    If X + Y >= K - 3 - 4 Then
+
+                        Idx = TilesMAP(X, Y).ImgIdx
+                        If Idx Then
+
+
+                            If ShadowsMaskMap(K).tSrf Is Nothing Then
+                                Set ShadowsMaskMap(K).tSrf = Cairo.CreateSurface(srfbkg.Width, srfbkg.Height * EXTRA, ImageSurface)
+                            End If
+
+                            TX = TilesMAP(X, Y).scrX + TILE(Idx).offX + srfbkg.Width * 0.5
+                            TY = TilesMAP(X, Y).scrY + TILE(Idx).offY + srfbkg.Height * 0.5
+                            ShadowsMaskMap(K).tSrf.CreateContext.RenderSurfaceContent TILE(Idx).tSrf, TX, TY
+                            If TY < MinY Then MinY = TY
+                            If TY + TILE(Idx).tSrf.Height > MaxY Then MaxY = TY + TILE(Idx).tSrf.Height
+                            If TX < MinX Then MinX = TX
+                            If TX + TILE(Idx).tSrf.Width > MaxX Then MaxX = TX + TILE(Idx).tSrf.Width
+                            'Debug.Print K, X + Y
+
+
+                        End If
+                    End If
                 End If
+
             Next
         Next
-        K = K - 1
-    Loop While K >= 0
 
-    ShadowsMaskSrf.BindToArray B
-    For X = 0 To UBound(B, 1) Step 4
-        For Y = 0 To UBound(B, 2)
-            B(X + 3, Y) = 255 - B(X + 3, Y)
+
+        '        Debug.Print MinY, MaxY
+        Debug.Print MinX, MaxX
+        If MinY <> 100000 Then
+
+        'Set MASKSRF(K) = MASKSRF(K).CropSurface(0, MinY, srfbkg.Width, MaxY - MinY)
+        Set ShadowsMaskMap(K).tSrf = ShadowsMaskMap(K).tSrf.CropSurface(MinX, MinY, MaxX - MinX, MaxY - MinY)
+        ShadowsMaskMap(K).offX = MinX
+        ShadowsMaskMap(K).offY = MinY
+        '        Set MASKCC(K) = Nothing
+
+        ShadowsMaskMap(K).tSrf.BindToArray B
+        For X = 0 To UBound(B, 1) Step 4
+            For Y = 0 To UBound(B, 2)
+                B(X + 3, Y) = 255 - B(X + 3, Y)
+            Next
         Next
-    Next
-    ShadowsMaskSrf.ReleaseArray B
+        ShadowsMaskMap(K).tSrf.ReleaseArray B
+End If
+
+        K = K - 2 '<<<<<<<<<<<<<<<<<<!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    Loop While K >= 0
+    
+    End If
+    
+    '<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+    '<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+    '<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+    '<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 End Sub
